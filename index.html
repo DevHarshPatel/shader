@@ -1,0 +1,650 @@
+<html><head><base href="https://websim.ai/shaders/">
+<title>Complex Shader with Inertial Rotation, Auto Rotate, and Extended Zoom</title>
+
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background-color: #000;
+  }
+  
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  
+  #customizeMenu {
+    position: fixed;
+    top: 60px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    display: none;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    z-index: 1000;
+  }
+  
+  .control-button {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5),
+                0 0 20px rgba(255, 255, 255, 0.3),
+                0 0 30px rgba(255, 255, 255, 0.1);
+    transform: perspective(100px) translateZ(0);
+    z-index: 100;
+  }
+  
+  .control-button:hover {
+    transform: perspective(100px) translateZ(10px);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.7),
+                0 0 30px rgba(255, 255, 255, 0.5),
+                0 0 45px rgba(255, 255, 255, 0.3);
+  }
+  
+  #toggleMenu {
+    top: 10px;
+    right: 10px;
+  }
+  
+  #randomizeButton {
+    bottom: 10px;
+    left: 10px;
+  }
+  
+  #fullscreenButton {
+    bottom: 10px;
+    right: 10px;
+  }
+  
+  input[type="range"] {
+    width: 100%;
+    margin: 10px 0;
+  }
+  
+  label {
+    display: block;
+    margin-top: 10px;
+  }
+  
+  .color-picker {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+  }
+  
+  .color-picker input[type="color"] {
+    margin-right: 10px;
+  }
+  
+  #buttonCustomization {
+    margin-top: 20px;
+    border-top: 1px solid white;
+    padding-top: 20px;
+  }
+
+  .checkbox-container {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+  }
+
+  .checkbox-container input[type="checkbox"] {
+    margin-right: 10px;
+  }
+</style>
+</head>
+<body>
+<canvas id="shaderCanvas"></canvas>
+<button id="toggleMenu" class="control-button">Customize Shader</button>
+<button id="randomizeButton" class="control-button">Randomize Shader</button>
+<button id="fullscreenButton" class="control-button">Toggle Fullscreen</button>
+<div id="customizeMenu">
+  <h3>Shader Customization</h3>
+  <label for="speed">Animation Speed:</label>
+  <input type="range" id="speed" min="0" max="2" step="0.1" value="1">
+  <label for="iterations">Iterations:</label>
+  <input type="range" id="iterations" min="1" max="10" step="1" value="4">
+  <label for="colorShift">Color Shift:</label>
+  <input type="range" id="colorShift" min="0" max="1" step="0.1" value="0.4">
+  <label for="zoom">Zoom:</label>
+  <input type="range" id="zoom" min="0.1" max="5" step="0.1" value="1">
+  <label for="mirrors">Number of Mirrors:</label>
+  <input type="range" id="mirrors" min="2" max="32" step="1" value="4">
+  <label for="dragForce">Drag Force:</label>
+  <input type="range" id="dragForce" min="0" max="1" step="0.01" value="0.2">
+  <label for="friction">Friction:</label>
+  <input type="range" id="friction" min="0" max="1" step="0.01" value="0.05">
+  
+  <div class="checkbox-container">
+    <input type="checkbox" id="autoRotate">
+    <label for="autoRotate">Auto Rotate</label>
+  </div>
+  <label for="autoRotateSpeed">Auto Rotate Speed:</label>
+  <input type="range" id="autoRotateSpeed" min="-2" max="2" step="0.1" value="0.5">
+  
+  <h4>Color Palette:</h4>
+  <div class="color-picker">
+    <input type="color" id="color1" value="#808080">
+    <label for="color1">Color 1</label>
+  </div>
+  <div class="color-picker">
+    <input type="color" id="color2" value="#808080">
+    <label for="color2">Color 2</label>
+  </div>
+  <div class="color-picker">
+    <input type="color" id="color3" value="#FFFFFF">
+    <label for="color3">Color 3</label>
+  </div>
+  <div class="color-picker">
+    <input type="color" id="color4" value="#436A8E">
+    <label for="color4">Color 4</label>
+  </div>
+
+  <div id="buttonCustomization">
+    <h4>Button Customization:</h4>
+    <div class="color-picker">
+      <input type="color" id="buttonColor" value="#FFFFFF">
+      <label for="buttonColor">Button Color</label>
+    </div>
+    <div class="color-picker">
+      <input type="color" id="buttonTextColor" value="#000000">
+      <label for="buttonTextColor">Button Text Color</label>
+    </div>
+    <label for="buttonGlow">Button Glow Intensity:</label>
+    <input type="range" id="buttonGlow" min="0" max="50" step="1" value="10">
+    <label for="button3D">Button 3D Effect:</label>
+    <input type="range" id="button3D" min="0" max="20" step="1" value="10">
+  </div>
+</div>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+  attribute vec4 aVertexPosition;
+  void main() {
+    gl_Position = aVertexPosition;
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  precision highp float;
+  uniform vec2 uResolution;
+  uniform float uTime;
+  uniform float uIterations;
+  uniform float uColorShift;
+  uniform float uZoom;
+  uniform vec3 uColor1;
+  uniform vec3 uColor2;
+  uniform vec3 uColor3;
+  uniform vec3 uColor4;
+  uniform float uMirrors;
+  uniform vec2 uMouse;
+  uniform float uRotation;
+
+  vec3 palette(float t) {
+    vec3 a = uColor1;
+    vec3 b = uColor2;
+    vec3 c = uColor3;
+    vec3 d = uColor4;
+    return a + b*cos( 6.28318*(c*t+d) );
+  }
+
+  void main() {
+    vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution.xy) / uResolution.y;
+    uv /= uZoom;
+    
+    float angle = uRotation;
+    mat2 rotation = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+    uv = rotation * uv;
+    
+    float sectorAngle = atan(uv.y, uv.x);
+    float radius = length(uv);
+    float sector = 6.28318 / uMirrors;
+    sectorAngle = mod(sectorAngle, sector);
+    if (mod(floor(atan(uv.y, uv.x) / sector), 2.0) == 1.0) {
+      sectorAngle = sector - sectorAngle;
+    }
+    uv = vec2(cos(sectorAngle), sin(sectorAngle)) * radius;
+    
+    vec2 uv0 = uv;
+    vec3 finalColor = vec3(0.0);
+    
+    for (float i = 0.0; i < 10.0; i++) {
+      if (i >= uIterations) break;
+      uv = fract(uv * 1.5) - 0.5;
+      
+      float d = length(uv) * exp(-length(uv0));
+      
+      vec3 col = palette(length(uv0) + i*uColorShift + uTime*0.4);
+      
+      d = sin(d*8. + uTime)/8.;
+      d = abs(d);
+      
+      d = pow(0.01 / d, 1.2);
+      
+      finalColor += col * d;
+    }
+    
+    gl_FragColor = vec4(finalColor, 1.0);
+  }
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"></script>
+
+<script>
+  const canvas = document.getElementById('shaderCanvas');
+  const gl = canvas.getContext('webgl');
+
+  if (!gl) {
+    console.error('WebGL not supported');
+    document.body.innerHTML = 'WebGL is not supported in your browser.';
+  }
+
+  function compileShader(gl, shaderSource, shaderType) {
+    const shader = gl.createShader(shaderType);
+    gl.shaderSource(shader, shaderSource);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      throw new Error(gl.getShaderInfoLog(shader));
+    }
+    return shader;
+  }
+
+  function createProgram(gl, vertexShader, fragmentShader) {
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(program));
+    }
+    return program;
+  }
+
+  const vertexShaderSource = document.getElementById('vertexShader').textContent;
+  const fragmentShaderSource = document.getElementById('fragmentShader').textContent;
+
+  const vertexShader = compileShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
+  const fragmentShader = compileShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
+  const program = createProgram(gl, vertexShader, fragmentShader);
+
+  const positionAttributeLocation = gl.getAttribLocation(program, 'aVertexPosition');
+  const positionBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  const positions = [-1, -1, 1, -1, -1, 1, 1, 1];
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+  const resolutionUniformLocation = gl.getUniformLocation(program, 'uResolution');
+  const timeUniformLocation = gl.getUniformLocation(program, 'uTime');
+  const iterationsUniformLocation = gl.getUniformLocation(program, 'uIterations');
+  const colorShiftUniformLocation = gl.getUniformLocation(program, 'uColorShift');
+  const zoomUniformLocation = gl.getUniformLocation(program, 'uZoom');
+  const color1UniformLocation = gl.getUniformLocation(program, 'uColor1');
+  const color2UniformLocation = gl.getUniformLocation(program, 'uColor2');
+  const color3UniformLocation = gl.getUniformLocation(program, 'uColor3');
+  const color4UniformLocation = gl.getUniformLocation(program, 'uColor4');
+  const mirrorsUniformLocation = gl.getUniformLocation(program, 'uMirrors');
+  const mouseUniformLocation = gl.getUniformLocation(program, 'uMouse');
+  const rotationUniformLocation = gl.getUniformLocation(program, 'uRotation');
+
+  function resizeCanvasToDisplaySize(canvas) {
+    const displayWidth  = canvas.clientWidth;
+    const displayHeight = canvas.clientHeight;
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+      canvas.width  = displayWidth;
+      canvas.height = displayHeight;
+    }
+  }
+
+  let speed = 1;
+  let iterations = 4;
+  let colorShift = 0.4;
+  let zoom = 1;
+  let mirrors = 4;
+  let color1 = [0.5, 0.5, 0.5];
+  let color2 = [0.5, 0.5, 0.5];
+  let color3 = [1.0, 1.0, 1.0];
+  let color4 = [0.263, 0.416, 0.557];
+  let mouseX = 0.5;
+  let mouseY = 0.5;
+  let rotation = 0;
+  let angularVelocity = 0;
+  let dragForce = 0.2;
+  let friction = 0.05;
+  let isMouseDown = false;
+  let lastMouseX = 0;
+  let lastMouseY = 0;
+  let autoRotate = false;
+  let autoRotateSpeed = 0.5;
+
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    return [r, g, b];
+  }
+
+  function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) + (Math.round(r * 255) << 16) + (Math.round(g * 255) << 8) + Math.round(b * 255)).toString(16).slice(1);
+  }
+
+  let lastTime = 0;
+  function render(time) {
+    const deltaTime = (time - lastTime) / 1000;
+    lastTime = time;
+
+    resizeCanvasToDisplaySize(gl.canvas);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.useProgram(program);
+    gl.enableVertexAttribArray(positionAttributeLocation);
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+    // Apply friction to angular velocity
+    if (!isMouseDown) {
+      angularVelocity *= (1 - friction);
+    }
+
+    // Update rotation based on angular velocity and auto-rotate
+    if (autoRotate) {
+      rotation += autoRotateSpeed * deltaTime;
+    } else {
+      rotation += angularVelocity * deltaTime;
+    }
+
+    gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+    gl.uniform1f(timeUniformLocation, time * 0.001 * speed);
+    gl.uniform1f(iterationsUniformLocation, iterations);
+    gl.uniform1f(colorShiftUniformLocation, colorShift);
+    gl.uniform1f(zoomUniformLocation, zoom);
+    gl.uniform3fv(color1UniformLocation, color1);
+    gl.uniform3fv(color2UniformLocation, color2);
+    gl.uniform3fv(color3UniformLocation, color3);
+    gl.uniform3fv(color4UniformLocation, color4);
+    gl.uniform1f(mirrorsUniformLocation, mirrors);
+    gl.uniform2f(mouseUniformLocation, mouseX, mouseY);
+    gl.uniform1f(rotationUniformLocation, rotation);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    requestAnimationFrame(render);
+  }
+
+  requestAnimationFrame(render);
+
+  // UI Controls
+  const toggleMenu = document.getElementById('toggleMenu');
+  const customizeMenu = document.getElementById('customizeMenu');
+  const speedSlider = document.getElementById('speed');
+  const iterationsSlider = document.getElementById('iterations');
+  const colorShiftSlider = document.getElementById('colorShift');
+  const zoomSlider = document.getElementById('zoom');
+  const mirrorsSlider = document.getElementById('mirrors');
+  const color1Picker = document.getElementById('color1');
+  const color2Picker = document.getElementById('color2');
+  const color3Picker = document.getElementById('color3');
+  const color4Picker = document.getElementById('color4');
+  const randomizeButton = document.getElementById('randomizeButton');
+  const fullscreenButton = document.getElementById('fullscreenButton');
+  const buttonColorPicker = document.getElementById('buttonColor');
+  const buttonTextColorPicker = document.getElementById('buttonTextColor');
+  const buttonGlowSlider = document.getElementById('buttonGlow');
+  const button3DSlider = document.getElementById('button3D');
+  const dragForceSlider = document.getElementById('dragForce');
+  const frictionSlider = document.getElementById('friction');
+  const autoRotateCheckbox = document.getElementById('autoRotate');
+  const autoRotateSpeedSlider = document.getElementById('autoRotateSpeed');
+
+  toggleMenu.addEventListener('click', () => {
+    customizeMenu.style.display = customizeMenu.style.display === 'none' ? 'block' : 'none';
+  });
+
+  speedSlider.addEventListener('input', (e) => {
+    speed = parseFloat(e.target.value);
+  });
+
+  iterationsSlider.addEventListener('input', (e) => {
+    iterations = parseInt(e.target.value);
+  });
+
+  colorShiftSlider.addEventListener('input', (e) => {
+    colorShift = parseFloat(e.target.value);
+  });
+
+  zoomSlider.addEventListener('input', (e) => {
+    zoom = parseFloat(e.target.value);
+  });
+
+  mirrorsSlider.addEventListener('input', (e) => {
+    mirrors = parseInt(e.target.value);
+  });
+
+  dragForceSlider.addEventListener('input', (e) => {
+    dragForce = parseFloat(e.target.value);
+  });
+
+  frictionSlider.addEventListener('input', (e) => {
+    friction = parseFloat(e.target.value);
+  });
+
+  color1Picker.addEventListener('input', (e) => {
+    color1 = hexToRgb(e.target.value);
+  });
+
+  color2Picker.addEventListener('input', (e) => {
+    color2 = hexToRgb(e.target.value);
+  });
+
+  color3Picker.addEventListener('input', (e) => {
+    color3 = hexToRgb(e.target.value);
+  });
+
+  color4Picker.addEventListener('input', (e) => {
+    color4 = hexToRgb(e.target.value);
+  });
+
+  autoRotateCheckbox.addEventListener('change', (e) => {
+    autoRotate = e.target.checked;
+  });
+
+  autoRotateSpeedSlider.addEventListener('input', (e) => {
+    autoRotateSpeed = parseFloat(e.target.value);
+  });
+
+  function randomizeShader() {
+    speed = Math.random() * 2;
+    iterations = Math.floor(Math.random() * 9) + 1;
+    colorShift = Math.random();
+    zoom = 0.1 + Math.random() * 4.9; // Extended zoom range
+    mirrors = Math.floor(Math.random() * 30) + 2;
+    color1 = [Math.random(), Math.random(), Math.random()];
+    color2 = [Math.random(), Math.random(), Math.random()];
+    color3 = [Math.random(), Math.random(), Math.random()];
+    color4 = [Math.random(), Math.random(), Math.random()];
+    dragForce = Math.random();
+    friction = Math.random() * 0.1;
+    autoRotate = Math.random() < 0.5;
+    autoRotateSpeed = (Math.random() * 4) - 2;
+
+    // Update UI
+    speedSlider.value = speed;
+    iterationsSlider.value = iterations;
+    colorShiftSlider.value = colorShift;
+    zoomSlider.value = zoom;
+    mirrorsSlider.value = mirrors;
+    color1Picker.value = rgbToHex(...color1);
+    color2Picker.value = rgbToHex(...color2);
+    color3Picker.value = rgbToHex(...color3);
+    color4Picker.value = rgbToHex(...color4);
+    dragForceSlider.value = dragForce;
+    frictionSlider.value = friction;
+    autoRotateCheckbox.checked = autoRotate;
+    autoRotateSpeedSlider.value = autoRotateSpeed;
+  }
+
+  randomizeButton.addEventListener('click', randomizeShader);
+
+  // Fullscreen functionality
+  function toggleFullScreen() {
+    if (!document.fullscreenElement) {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      } else if (document.documentElement.mozRequestFullScreen) { // Firefox
+        document.documentElement.mozRequestFullScreen();
+      } else if (document.documentElement.webkitRequestFullscreen) { // Chrome, Safari and Opera
+        document.documentElement.webkitRequestFullscreen();
+      } else if (document.documentElement.msRequestFullscreen) { // IE/Edge
+        document.documentElement.msRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.mozCancelFullScreen) { // Firefox
+        document.mozCancelFullScreen();
+      } else if (document.webkitExitFullscreen) { // Chrome, Safari and Opera
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) { // IE/Edge
+        document.msExitFullscreen();
+      }
+    }
+  }
+
+  fullscreenButton.addEventListener('click', toggleFullScreen);
+
+  // Update canvas size when entering or exiting fullscreen
+  document.addEventListener('fullscreenchange', () => {
+    resizeCanvasToDisplaySize(gl.canvas);
+  });
+
+  // Button customization
+  function updateButtonStyle() {
+    const buttons = document.querySelectorAll('.control-button');
+    const buttonColor = buttonColorPicker.value;
+    const buttonTextColor = buttonTextColorPicker.value;
+    const glowIntensity = buttonGlowSlider.value;
+    const effect3D = button3DSlider.value;
+
+    buttons.forEach(button => {
+      button.style.backgroundColor = buttonColor;
+      button.style.color = buttonTextColor;
+      button.style.boxShadow = `0 0 ${glowIntensity}px ${buttonColor},
+                                0 0 ${glowIntensity * 2}px ${buttonColor},
+                                0 0 ${glowIntensity * 3}px ${buttonColor}`;
+      button.style.transform = `perspective(100px) translateZ(${effect3D}px)`;
+    });
+  }
+
+  buttonColorPicker.addEventListener('input', updateButtonStyle);
+  buttonTextColorPicker.addEventListener('input', updateButtonStyle);
+  buttonGlowSlider.addEventListener('input', updateButtonStyle);
+  button3DSlider.addEventListener('input', updateButtonStyle);
+
+  // Button fade functionality
+  const buttons = document.querySelectorAll('.control-button');
+  let fadeTimeout;
+
+  function fadeButtons() {
+    buttons.forEach(button => {
+      button.style.opacity = '0';
+    });
+  }
+
+  function showButtons() {
+    buttons.forEach(button => {
+      button.style.opacity = '1';
+    });
+    clearTimeout(fadeTimeout);
+    fadeTimeout = setTimeout(fadeButtons, 10000);
+  }
+
+  // Initial fade out
+  fadeTimeout = setTimeout(fadeButtons, 10000);
+
+  // Show buttons on hover
+  buttons.forEach(button => {
+    button.addEventListener('mouseenter', showButtons);
+  });
+
+  // Show buttons on mouse move
+  document.addEventListener('mousemove', showButtons);
+
+  // Prevent buttons from fading when interacting with the menu
+  customizeMenu.addEventListener('mouseenter', () => {
+    clearTimeout(fadeTimeout);
+  });
+
+  customizeMenu.addEventListener('mouseleave', () => {
+    fadeTimeout = setTimeout(fadeButtons, 10000);
+  });
+
+  // Mouse interaction for rotation with inertia
+  canvas.addEventListener('mousedown', (e) => {
+    isMouseDown = true;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  });
+
+  canvas.addEventListener('mouseup', () => {
+    isMouseDown = false;
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    isMouseDown = false;
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (isMouseDown) {
+      const dx = e.clientX - lastMouseX;
+      const dy = e.clientY - lastMouseY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Convert distance to radians (assuming 96 DPI)
+      const distanceInRadians = (distance / 96) * Math.PI * 2;
+      
+      // Calculate the angle of mouse movement
+      const angle = Math.atan2(dy, dx);
+      
+      // Update angular velocity based on mouse movement
+      angularVelocity += distanceInRadians * dragForce * Math.sign(Math.cos(angle));
+      
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+    }
+    
+    mouseX = e.clientX / canvas.width;
+    mouseY = 1 - (e.clientY / canvas.height); // Invert Y-axis
+  });
+
+  // Initial button style update
+  updateButtonStyle();
+
+  // Add mousewheel event for zooming
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const zoomSpeed = 0.1;
+    zoom *= e.deltaY > 0 ? (1 + zoomSpeed) : (1 - zoomSpeed);
+    zoom = Math.max(0.1, Math.min(zoom, 5)); // Clamp zoom between 0.1 and 5
+    zoomSlider.value = zoom;
+  });
+</script>
+</body>
+</html>
